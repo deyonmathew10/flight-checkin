@@ -1,0 +1,15 @@
+
+services:
+  flight-checkin:
+    build: .
+    container_name: flight-compose
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+
+  serverless:
+    build: ./serverless
+    container_name: flight-serverless-container
+    ports:
+      - "3001:3000"
+    restart: unless-stopped

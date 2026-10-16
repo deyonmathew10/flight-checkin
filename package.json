@@ -1,0 +1,8 @@
+
+{
+  "name": "flight-checkin-serverless",
+  "version": "1.0.0",
+  "description": "Local serverless boarding pass generator",
+  "main": "function.js",
+  "type": "commonjs"
+}
