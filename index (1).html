@@ -1,0 +1,843 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyCheck | Flight Operations</title>
+<style>
+:root {
+    --navy: #102344;
+    --blue: #315efb;
+    --bg: #f4f7fc;
+    --white: #ffffff;
+    --text: #18253c;
+    --muted: #718096;
+    --border: #e6ebf3;
+    --green: #16865c;
+    --red: #d64545;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.app { min-height: 100vh; }
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 240px;
+    padding: 27px 17px;
+    background: var(--navy);
+    color: white;
+}
+.logo {
+    font-size: 23px;
+    font-weight: 800;
+    padding: 0 12px 35px;
+}
+.logo span { color: #86b5ff; }
+.nav-label {
+    color: #8fa2c1;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 0 13px;
+    margin-bottom: 12px;
+}
+.nav-item {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    margin: 5px 0;
+    border: 0;
+    border-radius: 9px;
+    text-align: left;
+    background: transparent;
+    color: #cbd5e6;
+}
+.nav-item:hover, .nav-item.active {
+    background: #263b60;
+    color: white;
+}
+.sidebar-bottom {
+    position: absolute;
+    left: 27px;
+    right: 20px;
+    bottom: 25px;
+    color: #9dafca;
+    font-size: 12px;
+    line-height: 1.8;
+}
+.main { margin-left: 240px; }
+.topbar {
+    background: white;
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+}
+.topbar small { color: var(--muted); }
+.avatar {
+    background: #e8edff;
+    color: #3154bb;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-weight: 800;
+}
+.profile { display: flex; align-items: center; gap: 12px; }
+.content { padding: 30px 32px; max-width: 1550px; margin: auto; }
+.heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+h1 { margin: 0 0 7px; font-size: 27px; }
+h2 { font-size: 18px; margin: 0 0 20px; }
+.subtitle { color: var(--muted); font-size: 14px; }
+.btn {
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 15px;
+    font-weight: 650;
+}
+.primary { background: var(--blue); color: white; }
+.primary:hover { background: #2349d8; }
+.light { background: #edf1ff; color: #2d50c2; }
+.danger { background: #fff0f0; color: var(--red); }
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 17px;
+    margin-bottom: 24px;
+}
+.stat, .panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 21px;
+    box-shadow: 0 4px 18px #14284c06;
+}
+.stat-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.stat-icon {
+    background: #edf1ff;
+    color: var(--blue);
+    border-radius: 10px;
+    padding: 9px;
+}
+.stat-name { color: var(--muted); font-size: 13px; }
+.stat-number { font-size: 30px; font-weight: 800; margin-top: 15px; }
+.stat-note { color: var(--muted); font-size: 12px; margin-top: 7px; }
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 315px;
+    gap: 22px;
+    align-items: start;
+}
+.panel { min-width: 0; }
+.panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.panel-heading h2 { margin: 0; }
+.search-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-bottom: 17px;
+}
+input, select {
+    padding: 11px 12px;
+    border: 1px solid #dbe2ed;
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+    min-width: 0;
+}
+.search-row input { flex: 1; min-width: 140px; }
+.search-row select { max-width: 150px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 690px; }
+th, td {
+    padding: 15px 11px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 13px;
+}
+th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.person { font-weight: 750; }
+.secondary-text { color: var(--muted); font-size: 12px; margin-top: 5px; }
+.pill {
+    display: inline-block;
+    border-radius: 30px;
+    padding: 6px 9px;
+    font-size: 11px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+.status-done { background: #e4f8ed; color: #16865c; }
+.status-pending { background: #fff3d8; color: #966500; }
+.class-first { background: #f0e7ff; color: #7541bb; }
+.class-business { background: #e7efff; color: #3158bd; }
+.class-economy { background: #edf0f5; color: #566276; }
+.actions { display: flex; gap: 6px; }
+.small-btn { border: 0; border-radius: 7px; padding: 8px; font-size: 12px; }
+.flight-card {
+    background: linear-gradient(135deg, #142e58, #315efb);
+    color: white;
+    padding: 22px;
+    border-radius: 13px;
+    margin-bottom: 20px;
+}
+.flight-card small { color: #c9d9ff; }
+.flight-route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 23px 0;
+    gap: 10px;
+}
+.airport { font-size: 27px; font-weight: 800; }
+.route-line { flex: 1; text-align: center; color: #d6e3ff; }
+.flight-info {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #ffffff40;
+    padding-top: 15px;
+    font-size: 12px;
+}
+.progress {
+    height: 8px;
+    background: #e9eef7;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 15px 0 9px;
+}
+.progress div { height: 100%; background: var(--blue); }
+.category-row { margin: 20px 0; }
+.category-head { display: flex; justify-content: space-between; font-size: 13px; }
+.category-head span:last-child { color: var(--muted); }
+.notice {
+    padding: 13px 15px;
+    border-radius: 9px;
+    margin-bottom: 18px;
+    background: #e3f8ec;
+    color: #147449;
+}
+.empty { text-align: center; padding: 30px; color: var(--muted); }
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 25px; }
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: #07152bb8;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+.modal.show { display: flex; }
+.modal-card {
+    background: white;
+    width: 100%;
+    max-width: 470px;
+    border-radius: 16px;
+    padding: 25px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-card label { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 7px; }
+.modal-card input, .modal-card select { width: 100%; }
+.form-buttons { display: flex; gap: 10px; margin-top: 20px; }
+.form-buttons button { flex: 1; }
+.boarding { border: 1px dashed #9eabc1; padding: 23px; border-radius: 12px; }
+.boarding h2 { text-align: center; }
+.boarding-route { display: flex; justify-content: space-between; align-items: center; margin: 25px 0; }
+.boarding-code { font-size: 25px; font-weight: 800; }
+.hidden { display: none !important; }
+@media(max-width: 1150px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .layout { grid-template-columns: 1fr; }
+}
+@media(max-width: 700px) {
+    .sidebar { position: static; width: auto; padding: 15px; }
+    .logo { padding-bottom: 14px; }
+    .nav-label, .sidebar-bottom { display: none; }
+    .nav-item { display: inline-block; width: auto; padding: 9px; font-size: 12px; }
+    .main { margin-left: 0; }
+    .topbar { padding: 15px; }
+    .content { padding: 20px 14px; }
+    .heading { align-items: flex-start; flex-direction: column; }
+    .stats { gap: 10px; }
+    .stat { padding: 15px; }
+    .stat-number { font-size: 25px; }
+}
+@media print {
+    body * { visibility: hidden; }
+    #boardingPass, #boardingPass * { visibility: visible; }
+    #boardingPass { position: absolute; inset: 0; padding: 20px; }
+    .no-print { display: none !important; }
+}
+
+.auth-screen {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: linear-gradient(135deg, #102344, #315efb);
+}
+.auth-card {
+    width: 100%;
+    max-width: 430px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px;
+    box-shadow: 0 18px 60px #06142d55;
+}
+.auth-brand { font-size: 27px; font-weight: 850; color: #102344; margin-bottom: 8px; }
+.auth-brand span { color: #315efb; }
+.auth-subtitle { color: #718096; font-size: 14px; margin-bottom: 24px; }
+.auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.auth-tabs button { flex: 1; border: 0; border-radius: 8px; padding: 11px; background: #edf1ff; color: #3154bb; font-weight: 700; }
+.auth-tabs button.active { background: #315efb; color: white; }
+.auth-form label { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 7px; }
+.auth-form input { width: 100%; }
+.auth-form .btn { width: 100%; margin-top: 20px; }
+.auth-message { font-size: 13px; margin-top: 14px; color: #d64545; min-height: 18px; }
+.auth-note { font-size: 11px; color: #718096; line-height: 1.5; margin-top: 18px; }
+.profile { flex-wrap: wrap; }
+@media(max-width: 700px) {
+    .auth-card { padding: 24px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="auth-screen" id="authScreen">
+    <section class="auth-card">
+        <div class="auth-brand">✈ Sky<span>Check</span></div>
+        <div class="auth-subtitle">Flight Operations · Passenger Check-In</div>
+        <div class="auth-tabs">
+            <button type="button" class="active" id="loginTab">Login</button>
+            <button type="button" id="registerTab">Create Account</button>
+        </div>
+        <form class="auth-form" id="loginForm">
+            <label for="loginUsername">Username</label>
+            <input id="loginUsername" autocomplete="username" required maxlength="40" placeholder="Enter your username">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" required maxlength="100" placeholder="Enter your password">
+            <button class="btn primary" type="submit">Login to SkyCheck</button>
+            <div class="auth-message" id="loginMessage" role="status"></div>
+        </form>
+        <form class="auth-form hidden" id="registerForm">
+            <label for="registerName">Full Name</label>
+            <input id="registerName" required maxlength="80" placeholder="Enter your full name">
+            <label for="registerUsername">Choose Username</label>
+            <input id="registerUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Create a username">
+            <label for="registerPassword">Create Password</label>
+            <input id="registerPassword" type="password" autocomplete="new-password" required minlength="4" maxlength="100" placeholder="At least 4 characters">
+            <button class="btn primary" type="submit">Create Account</button>
+            <div class="auth-message" id="registerMessage" role="status"></div>
+        </form>
+        <div class="auth-note">Academic project demo: accounts are stored in this browser only. This front-end demo is not suitable for real or sensitive accounts.</div>
+    </section>
+</div>
+
+<div class="app hidden" id="appRoot">
+<aside class="sidebar">
+    <div class="logo">✈ Sky<span>Check</span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <button class="nav-item active" data-view="all">▦ &nbsp; Dashboard</button>
+    <button class="nav-item" data-view="all">♙ &nbsp; Passengers</button>
+    <button class="nav-item" data-view="pending">◷ &nbsp; Pending Check-In</button>
+    <button class="nav-item" data-view="completed">✓ &nbsp; Checked-In</button>
+    <div class="sidebar-bottom">Flight Operations<br>Management System<br><br>Frontend Demo · v1.0</div>
+</aside>
+
+<div class="main">
+<header class="topbar">
+    <div>
+        <strong>Flight Operations</strong><br>
+        <small>Passenger check-in management</small>
+    </div>
+    <div class="profile">
+        <div style="text-align:right">
+            <strong id="loggedInName">User</strong><br>
+            <small id="loggedInUsername">Signed in</small>
+        </div>
+        <div class="avatar" id="loggedInAvatar">U</div>
+        <button class="btn light" id="logoutBtn" type="button">Logout</button>
+    </div>
+</header>
+
+<main class="content">
+    <div class="heading">
+        <div>
+            <h1>Check-In Dashboard</h1>
+            <div class="subtitle">Manage passenger records and boarding status.</div>
+        </div>
+        <button class="btn primary" id="addBtn">＋ Add Passenger</button>
+    </div>
+
+    <div id="notice" class="notice hidden"></div>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="stat-top"><span class="stat-name">Total Passengers</span><span class="stat-icon">♙</span></div>
+            <div class="stat-number" id="totalCount">0</div>
+            <div class="stat-note">Registered passengers</div>
+        </div>
+        <div class="stat">
+            <div class="stat-top"><span class="stat-name">Checked In</span><span class="stat-icon">✓</span></div>
+            <div class="stat-number" id="checkedCount">0</div>
+            <div class="stat-note">Ready for boarding</div>
+        </div>
+        <div class="stat">
+            <div class="stat-top"><span class="stat-name">Pending</span><span class="stat-icon">◷</span></div>
+            <div class="stat-number" id="pendingCount">0</div>
+            <div class="stat-note">Awaiting check-in</div>
+        </div>
+        <div class="stat">
+            <div class="stat-top"><span class="stat-name">Check-In Rate</span><span class="stat-icon">↗</span></div>
+            <div class="stat-number" id="rateCount">0%</div>
+            <div class="stat-note">Overall completion</div>
+        </div>
+    </section>
+
+    <section class="layout">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Passenger Manifest</h2>
+                <span class="subtitle" id="recordCount">0 records</span>
+            </div>
+            <div class="search-row">
+                <input id="search" placeholder="Search passenger, passport or flight...">
+                <select id="classFilter">
+                    <option value="">All Classes</option>
+                    <option value="First">First Class</option>
+                    <option value="Business">Business</option>
+                    <option value="Economy">Economy</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Passenger</th><th>Flight</th><th>Class</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="passengerRows"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <div class="flight-card">
+                <small>FEATURED FLIGHT</small>
+                <h2 style="margin:12px 0 0">Flight AJ101</h2>
+                <div class="flight-route">
+                    <div><div class="airport">COK</div><small>Cochin</small></div>
+                    <div class="route-line">✈ ───── ✈</div>
+                    <div style="text-align:right"><div class="airport">DXB</div><small>Dubai</small></div>
+                </div>
+                <div class="flight-info">
+                    <div><small>FLIGHT</small><br><strong>AJ101</strong></div>
+                    <div><small>STATUS</small><br><strong>Scheduled</strong></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Passenger Class Overview</h2>
+                <div id="classStats"></div>
+                <div style="margin-top:23px">
+                    <div style="display:flex;justify-content:space-between;font-size:13px">
+                        <strong>Check-In Progress</strong><strong id="progressLabel">0%</strong>
+                    </div>
+                    <div class="progress"><div id="progressBar" style="width:0%"></div></div>
+                    <div class="subtitle">Passengers successfully checked in</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<footer>SkyCheck · Flight Check-In Management System · Academic Frontend Demo</footer>
+</div>
+</div>
+
+<div class="modal" id="passengerModal">
+    <div class="modal-card">
+        <h2 id="modalTitle">Register Passenger</h2>
+        <form id="passengerForm">
+            <input type="hidden" id="passengerId">
+            <label for="passengerName">Passenger Name</label>
+            <input id="passengerName" required maxlength="100" placeholder="Full name">
+            <label for="passport">Passport Number</label>
+            <input id="passport" required maxlength="30" placeholder="Passport number">
+            <label for="flight">Flight Number</label>
+            <input id="flight" required maxlength="20" value="AJ101">
+            <label for="travelClass">Travel Class</label>
+            <select id="travelClass">
+                <option>First</option>
+                <option>Business</option>
+                <option selected>Economy</option>
+            </select>
+            <div class="form-buttons">
+                <button class="btn light" type="button" id="cancelBtn">Cancel</button>
+                <button class="btn primary" type="submit">Save Passenger</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="boardingModal">
+    <div class="modal-card">
+        <div id="boardingPass" class="boarding"></div>
+        <div class="form-buttons no-print">
+            <button class="btn light" onclick="closeBoarding()">Close</button>
+            <button class="btn primary" onclick="window.print()">Print Boarding Pass</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'skycheck_passengers_v1';
+
+const SESSION_KEY = 'skycheck_current_user_v1';
+const TOKEN_KEY = 'skycheck_auth_token_v1';
+const API_BASE = 'https://flight-checkin-1.onrender.com/api';
+
+function setAuthMessage(id, message, success = false) {
+    const element = document.getElementById(id);
+    element.textContent = message;
+    element.style.color = success ? '#16865c' : '#d64545';
+}
+
+function showAuthTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+    document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+    document.getElementById('loginTab').classList.toggle('active', isLogin);
+    document.getElementById('registerTab').classList.toggle('active', !isLogin);
+    setAuthMessage('loginMessage', '');
+    setAuthMessage('registerMessage', '');
+}
+
+function showSignedInApp(user) {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appRoot').classList.remove('hidden');
+    document.getElementById('loggedInName').textContent = user.name;
+    document.getElementById('loggedInUsername').textContent = '@' + user.username;
+    document.getElementById('loggedInAvatar').textContent =
+        (user.name.trim().charAt(0) || user.username.charAt(0)).toUpperCase();
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, username: user.username }));
+}
+
+function signOut() {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    document.getElementById('appRoot').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('loginForm').reset();
+    document.getElementById('registerForm').reset();
+    showAuthTab('login');
+}
+
+document.getElementById('loginTab').addEventListener('click', () => showAuthTab('login'));
+document.getElementById('registerTab').addEventListener('click', () => showAuthTab('register'));
+
+document.getElementById('registerForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = document.getElementById('registerName').value.trim();
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    if (!name || username.length < 3 || password.length < 4) {
+        setAuthMessage('registerMessage', 'Enter a name, username of at least 3 characters, and password of at least 4 characters.');
+        return;
+    }
+    try {
+        const response = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, username, password })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not create account.');
+        document.getElementById('registerForm').reset();
+        document.getElementById('loginUsername').value = username;
+        showAuthTab('login');
+        setAuthMessage('loginMessage', result.message || 'Account created. Please log in.', true);
+    } catch (error) {
+        setAuthMessage('registerMessage', error.message || 'Cannot connect to backend. Check Docker containers.');
+    }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    try {
+        const response = await fetch(`${API_BASE}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Incorrect username or password.');
+        sessionStorage.setItem(TOKEN_KEY, result.token);
+        showSignedInApp(result.user);
+        render();
+    } catch (error) {
+        setAuthMessage('loginMessage', error.message || 'Cannot connect to backend. Check Docker containers.');
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', signOut);
+
+try {
+    const activeUser = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    if (activeUser && activeUser.name && activeUser.username && token) {
+        showSignedInApp(activeUser);
+    }
+} catch {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+}
+
+
+const demoPassengers = [
+    {id:1,name:'Arun Mathew',passport:'P10001',flight:'AJ101',travelClass:'First',checked:true},
+    {id:2,name:'Anu Thomas',passport:'P10002',flight:'AJ101',travelClass:'Business',checked:false},
+    {id:3,name:'Rahul Joseph',passport:'P10003',flight:'AJ202',travelClass:'Economy',checked:true},
+    {id:4,name:'Meera George',passport:'P10004',flight:'AJ202',travelClass:'Economy',checked:false},
+    {id:5,name:'Kevin James',passport:'P10005',flight:'AJ101',travelClass:'Business',checked:true}
+];
+
+let passengers;
+try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    passengers = saved ? JSON.parse(saved) : demoPassengers;
+    if (!Array.isArray(passengers)) passengers = demoPassengers;
+} catch {
+    passengers = demoPassengers;
+}
+
+let currentView = 'all';
+let noticeTimer;
+
+function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(passengers));
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    })[ch]);
+}
+
+function showNotice(message) {
+    const box = document.getElementById('notice');
+    box.textContent = message;
+    box.classList.remove('hidden');
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => box.classList.add('hidden'), 3000);
+}
+
+function render() {
+    saveData();
+
+    const total = passengers.length;
+    const checked = passengers.filter(p => p.checked).length;
+    const pending = total - checked;
+    const rate = total ? Math.round(checked * 100 / total) : 0;
+
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('checkedCount').textContent = checked;
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('rateCount').textContent = rate + '%';
+    document.getElementById('progressLabel').textContent = rate + '%';
+    document.getElementById('progressBar').style.width = rate + '%';
+
+    const counts = {
+        First: passengers.filter(p => p.travelClass === 'First').length,
+        Business: passengers.filter(p => p.travelClass === 'Business').length,
+        Economy: passengers.filter(p => p.travelClass === 'Economy').length
+    };
+    document.getElementById('classStats').innerHTML =
+        Object.entries(counts).map(([name, count]) => `
+            <div class="category-row">
+                <div class="category-head"><span>${name} Class</span><span>${count} passengers</span></div>
+                <div class="progress"><div style="width:${total ? count*100/total : 0}%;background:${name==='First'?'#8656c7':name==='Business'?'#315efb':'#8090a7'}"></div></div>
+            </div>
+        `).join('');
+
+    const term = document.getElementById('search').value.toLowerCase();
+    const selectedClass = document.getElementById('classFilter').value;
+
+    const filtered = passengers.filter(p => {
+        const matchesSearch = [p.name,p.passport,p.flight].some(v => v.toLowerCase().includes(term));
+        const matchesClass = !selectedClass || p.travelClass === selectedClass;
+        const matchesView = currentView === 'all' ||
+            (currentView === 'pending' && !p.checked) ||
+            (currentView === 'completed' && p.checked);
+        return matchesSearch && matchesClass && matchesView;
+    });
+
+    document.getElementById('recordCount').textContent = filtered.length + ' records';
+
+    document.getElementById('passengerRows').innerHTML = filtered.length ? filtered.map(p => `
+        <tr>
+            <td>
+                <div class="person">${escapeHTML(p.name)}</div>
+                <div class="secondary-text">${escapeHTML(p.passport)}</div>
+            </td>
+            <td>${escapeHTML(p.flight)}</td>
+            <td><span class="pill class-${p.travelClass.toLowerCase()}">${escapeHTML(p.travelClass)}</span></td>
+            <td><span class="pill ${p.checked?'status-done':'status-pending'}">${p.checked?'Checked In':'Pending'}</span></td>
+            <td>
+                <div class="actions">
+                    <button class="small-btn light" onclick="toggleCheckIn(${p.id})">${p.checked?'Undo':'Check In'}</button>
+                    <button class="small-btn light" onclick="showBoardingPass(${p.id})" title="Boarding pass">🎫</button>
+                    <button class="small-btn danger" onclick="deletePassenger(${p.id})" title="Delete">×</button>
+                </div>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="5" class="empty">No passengers found.</td></tr>';
+}
+
+function openModal(passenger = null) {
+    document.getElementById('passengerForm').reset();
+    document.getElementById('passengerId').value = passenger ? passenger.id : '';
+    document.getElementById('modalTitle').textContent = passenger ? 'Edit Passenger' : 'Register Passenger';
+    if (passenger) {
+        document.getElementById('passengerName').value = passenger.name;
+        document.getElementById('passport').value = passenger.passport;
+        document.getElementById('flight').value = passenger.flight;
+        document.getElementById('travelClass').value = passenger.travelClass;
+    }
+    document.getElementById('passengerModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('passengerModal').classList.remove('show');
+}
+
+document.getElementById('addBtn').addEventListener('click', () => openModal());
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('classFilter').addEventListener('change', render);
+
+document.getElementById('passengerForm').addEventListener('submit', event => {
+    event.preventDefault();
+
+    const idValue = document.getElementById('passengerId').value;
+    const passenger = {
+        id: idValue ? Number(idValue) : Date.now(),
+        name: document.getElementById('passengerName').value.trim(),
+        passport: document.getElementById('passport').value.trim().toUpperCase(),
+        flight: document.getElementById('flight').value.trim().toUpperCase(),
+        travelClass: document.getElementById('travelClass').value,
+        checked: idValue ? passengers.find(p => p.id === Number(idValue)).checked : false
+    };
+
+    if (!passenger.name || !passenger.passport || !passenger.flight) {
+        showNotice('Please complete all passenger fields.');
+        return;
+    }
+
+    const duplicate = passengers.some(p =>
+        p.passport.toLowerCase() === passenger.passport.toLowerCase() &&
+        p.id !== passenger.id
+    );
+    if (duplicate) {
+        showNotice('That passport number is already registered.');
+        return;
+    }
+
+    if (idValue) {
+        passengers = passengers.map(p => p.id === passenger.id ? passenger : p);
+        showNotice('Passenger details updated.');
+    } else {
+        passengers.unshift(passenger);
+        showNotice('Passenger registered successfully.');
+    }
+
+    closeModal();
+    render();
+});
+
+function toggleCheckIn(id) {
+    passengers = passengers.map(p => p.id === id ? {...p, checked:!p.checked} : p);
+    render();
+    showNotice('Passenger check-in status updated.');
+}
+
+function deletePassenger(id) {
+    const passenger = passengers.find(p => p.id === id);
+    if (!passenger || !confirm('Delete ' + passenger.name + '?')) return;
+    passengers = passengers.filter(p => p.id !== id);
+    render();
+    showNotice('Passenger deleted.');
+}
+
+function showBoardingPass(id) {
+    const p = passengers.find(p => p.id === id);
+    if (!p) return;
+
+    if (!p.checked) {
+        showNotice('Check in the passenger before printing a boarding pass.');
+        return;
+    }
+
+    document.getElementById('boardingPass').innerHTML = `
+        <h2>✈ SKY<span style="color:#315efb">CHECK</span></h2>
+        <p style="text-align:center;color:#718096">BOARDING PASS</p>
+        <div class="boarding-route">
+            <div><div class="boarding-code">COK</div><small>Cochin</small></div>
+            <div style="text-align:center">✈ ───── ✈<br><strong>${escapeHTML(p.flight)}</strong></div>
+            <div style="text-align:right"><div class="boarding-code">DXB</div><small>Dubai</small></div>
+        </div>
+        <hr style="border:0;border-top:1px dashed #9eabc1">
+        <p><small>PASSENGER NAME</small><br><strong>${escapeHTML(p.name)}</strong></p>
+        <p><small>PASSPORT NUMBER</small><br><strong>${escapeHTML(p.passport)}</strong></p>
+        <p><small>TRAVEL CLASS</small><br><strong>${escapeHTML(p.travelClass)}</strong></p>
+        <p><small>STATUS</small><br><strong style="color:#16865c">CHECKED IN</strong></p>
+        <p style="text-align:center;color:#718096;font-size:12px">Academic project demonstration — not valid for real travel.</p>
+    `;
+    document.getElementById('boardingModal').classList.add('show');
+}
+
+function closeBoarding() {
+    document.getElementById('boardingModal').classList.remove('show');
+}
+
+document.querySelectorAll('.nav-item').forEach(button => {
+    button.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+        currentView = button.dataset.view;
+        render();
+    });
+});
+
+render();
+</script>
+</body>
+</html>
