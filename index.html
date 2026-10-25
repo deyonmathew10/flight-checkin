@@ -296,10 +296,73 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 25px
     #boardingPass { position: absolute; inset: 0; padding: 20px; }
     .no-print { display: none !important; }
 }
+
+.auth-screen {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: linear-gradient(135deg, #102344, #315efb);
+}
+.auth-card {
+    width: 100%;
+    max-width: 430px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px;
+    box-shadow: 0 18px 60px #06142d55;
+}
+.auth-brand { font-size: 27px; font-weight: 850; color: #102344; margin-bottom: 8px; }
+.auth-brand span { color: #315efb; }
+.auth-subtitle { color: #718096; font-size: 14px; margin-bottom: 24px; }
+.auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.auth-tabs button { flex: 1; border: 0; border-radius: 8px; padding: 11px; background: #edf1ff; color: #3154bb; font-weight: 700; }
+.auth-tabs button.active { background: #315efb; color: white; }
+.auth-form label { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 7px; }
+.auth-form input { width: 100%; }
+.auth-form .btn { width: 100%; margin-top: 20px; }
+.auth-message { font-size: 13px; margin-top: 14px; color: #d64545; min-height: 18px; }
+.auth-note { font-size: 11px; color: #718096; line-height: 1.5; margin-top: 18px; }
+.profile { flex-wrap: wrap; }
+@media(max-width: 700px) {
+    .auth-card { padding: 24px; }
+}
+
 </style>
 </head>
 <body>
-<div class="app">
+
+<div class="auth-screen" id="authScreen">
+    <section class="auth-card">
+        <div class="auth-brand">✈ Sky<span>Check</span></div>
+        <div class="auth-subtitle">Flight Operations · Passenger Check-In</div>
+        <div class="auth-tabs">
+            <button type="button" class="active" id="loginTab">Login</button>
+            <button type="button" id="registerTab">Create Account</button>
+        </div>
+        <form class="auth-form" id="loginForm">
+            <label for="loginUsername">Username</label>
+            <input id="loginUsername" autocomplete="username" required maxlength="40" placeholder="Enter your username">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" required maxlength="100" placeholder="Enter your password">
+            <button class="btn primary" type="submit">Login to SkyCheck</button>
+            <div class="auth-message" id="loginMessage" role="status"></div>
+        </form>
+        <form class="auth-form hidden" id="registerForm">
+            <label for="registerName">Full Name</label>
+            <input id="registerName" required maxlength="80" placeholder="Enter your full name">
+            <label for="registerUsername">Choose Username</label>
+            <input id="registerUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Create a username">
+            <label for="registerPassword">Create Password</label>
+            <input id="registerPassword" type="password" autocomplete="new-password" required minlength="4" maxlength="100" placeholder="At least 4 characters">
+            <button class="btn primary" type="submit">Create Account</button>
+            <div class="auth-message" id="registerMessage" role="status"></div>
+        </form>
+        <div class="auth-note">Academic project demo: accounts are stored in this browser only. This front-end demo is not suitable for real or sensitive accounts.</div>
+    </section>
+</div>
+
+<div class="app hidden" id="appRoot">
 <aside class="sidebar">
     <div class="logo">✈ Sky<span>Check</span></div>
     <div class="nav-label">WORKSPACE</div>
@@ -318,10 +381,11 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 25px
     </div>
     <div class="profile">
         <div style="text-align:right">
-            <strong>Administrator</strong><br>
-            <small>Airport Operations</small>
+            <strong id="loggedInName">User</strong><br>
+            <small id="loggedInUsername">Signed in</small>
         </div>
-        <div class="avatar">AD</div>
+        <div class="avatar" id="loggedInAvatar">U</div>
+        <button class="btn light" id="logoutBtn" type="button">Logout</button>
     </div>
 </header>
 
@@ -454,6 +518,109 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 25px
 
 <script>
 const STORAGE_KEY = 'skycheck_passengers_v1';
+
+const SESSION_KEY = 'skycheck_current_user_v1';
+const TOKEN_KEY = 'skycheck_auth_token_v1';
+const API_BASE = 'http://localhost:3002/api';
+
+function setAuthMessage(id, message, success = false) {
+    const element = document.getElementById(id);
+    element.textContent = message;
+    element.style.color = success ? '#16865c' : '#d64545';
+}
+
+function showAuthTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+    document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+    document.getElementById('loginTab').classList.toggle('active', isLogin);
+    document.getElementById('registerTab').classList.toggle('active', !isLogin);
+    setAuthMessage('loginMessage', '');
+    setAuthMessage('registerMessage', '');
+}
+
+function showSignedInApp(user) {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appRoot').classList.remove('hidden');
+    document.getElementById('loggedInName').textContent = user.name;
+    document.getElementById('loggedInUsername').textContent = '@' + user.username;
+    document.getElementById('loggedInAvatar').textContent =
+        (user.name.trim().charAt(0) || user.username.charAt(0)).toUpperCase();
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, username: user.username }));
+}
+
+function signOut() {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    document.getElementById('appRoot').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('loginForm').reset();
+    document.getElementById('registerForm').reset();
+    showAuthTab('login');
+}
+
+document.getElementById('loginTab').addEventListener('click', () => showAuthTab('login'));
+document.getElementById('registerTab').addEventListener('click', () => showAuthTab('register'));
+
+document.getElementById('registerForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = document.getElementById('registerName').value.trim();
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    if (!name || username.length < 3 || password.length < 4) {
+        setAuthMessage('registerMessage', 'Enter a name, username of at least 3 characters, and password of at least 4 characters.');
+        return;
+    }
+    try {
+        const response = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, username, password })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not create account.');
+        document.getElementById('registerForm').reset();
+        document.getElementById('loginUsername').value = username;
+        showAuthTab('login');
+        setAuthMessage('loginMessage', result.message || 'Account created. Please log in.', true);
+    } catch (error) {
+        setAuthMessage('registerMessage', error.message || 'Cannot connect to backend. Check Docker containers.');
+    }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    try {
+        const response = await fetch(`${API_BASE}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Incorrect username or password.');
+        sessionStorage.setItem(TOKEN_KEY, result.token);
+        showSignedInApp(result.user);
+        render();
+    } catch (error) {
+        setAuthMessage('loginMessage', error.message || 'Cannot connect to backend. Check Docker containers.');
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', signOut);
+
+try {
+    const activeUser = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    if (activeUser && activeUser.name && activeUser.username && token) {
+        showSignedInApp(activeUser);
+    }
+} catch {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+}
+
 
 const demoPassengers = [
     {id:1,name:'Arun Mathew',passport:'P10001',flight:'AJ101',travelClass:'First',checked:true},

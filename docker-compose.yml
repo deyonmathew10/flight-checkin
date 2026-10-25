@@ -1,4 +1,3 @@
-
 services:
   flight-checkin:
     build: .
@@ -12,4 +11,15 @@ services:
     container_name: flight-serverless-container
     ports:
       - "3001:3000"
+    restart: unless-stopped
+
+  auth-backend:
+    build: ./backend
+    container_name: skycheck-auth-backend
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      - JWT_SECRET=skycheck-college-demo-change-this-secret
     restart: unless-stopped
